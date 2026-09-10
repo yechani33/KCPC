@@ -1,0 +1,38 @@
+name: Update Sunday sermon
+
+# Pulls the newest video from the church YouTube channel into the homepage.
+# Runs itself daily; you can also trigger it by hand from the Actions tab.
+
+on:
+  schedule:
+    # 12:00 UTC daily — Sunday morning services are usually posted by then.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-sermon
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refresh sermon block
+        run: python3 tools/update_sermon.py
+
+      - name: Commit if changed
+        run: |
+          if [[ -z "$(git status --porcelain index.html)" ]]; then
+            echo "No change — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Update homepage sermon to latest YouTube video"
+          git push
