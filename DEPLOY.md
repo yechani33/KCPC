@@ -1,104 +1,96 @@
-# Deploying and connecting the domain
+# Deploying
 
-One-time setup. Once this is done, publishing is just `git push`.
+The site is hosted free on GitHub Pages. Publishing is `git push` — nothing else.
 
----
-
-## 1. Install git (one time, on this Mac)
-
-Nothing is installed on this machine yet. In Terminal:
-
-```bash
-sudo softwareupdate --install "Command Line Tools for Xcode 27.0-27.0"
-```
-
-Enter your Mac login password when asked (nothing appears as you type — that's normal).
-The label really does repeat the version — check the exact name on your machine with
-`softwareupdate --list` if it ever differs. It downloads about 500MB. Then confirm:
-
-```bash
-git --version
-```
-
-*Alternative:* run `xcode-select --install` and click **Install** in the dialog that pops up.
+There are two phases. **Phase 1** puts the site online right now at a GitHub address,
+with no domain work and no cost. **Phase 2**, whenever you're ready, moves it onto
+`www.cincinnatikcpc.com`.
 
 ---
 
-## 2. The GitHub repository
+# Phase 1 — live at the GitHub address
 
-Already created: <https://github.com/yechani33/KCPC> — public, empty, default branch
-`main`. Public is what you want here; GitHub Pages is only free on public repositories.
+## Turn on GitHub Pages
 
----
+Go to <https://github.com/yechani33/KCPC/settings/pages>
 
-## 3. Push the site
+- **Source:** Deploy from a branch
+- **Branch:** `main`, folder `/ (root)`
+- **Save**
+
+Wait a minute or two — the **Actions** tab shows the build running. Then the site is live at:
+
+**<https://yechani33.github.io/KCPC/>**
+
+That's it. HTTPS is automatic, there's no bill, and nothing about your domain or your
+current Wix site is touched.
+
+## Making changes after that
 
 ```bash
 cd ~/cincinnatikcpc
-git init
+# edit files, or ask Claude to
 git add -A
-git commit -m "Rebuild cincinnatikcpc.com as a static site"
-git branch -M main
-git remote add origin https://github.com/yechani33/KCPC.git
-git push -u origin main
+git commit -m "무엇을 바꿨는지 적기"
+git push
 ```
 
-GitHub will ask you to sign in. When it asks for a **password**, it does *not* mean your
-GitHub account password — it wants a Personal Access Token:
-
-1. <https://github.com/settings/tokens> → **Generate new token (classic)**
-2. Tick the **repo** scope, generate, and copy the token
-3. Paste it as the password
+Live in about a minute.
 
 ---
 
-## 4. Turn on GitHub Pages
+# Phase 2 — move onto cincinnatikcpc.com
 
-In the repository: **Settings → Pages**
+Do this whenever you want. Until then Phase 1 keeps working, and your Wix site keeps
+serving the real domain, so nothing breaks in the meantime.
 
-- **Source:** Deploy from a branch
-- **Branch:** `main`, folder `/ (root)` → **Save**
+The domain is registered at **GoDaddy** and uses GoDaddy's nameservers. GitHub has no DNS
+service of its own, so the records have to change there. It is a one-time job — after this
+you never log into GoDaddy again.
 
-The `CNAME` file in this repo already sets the custom domain to
-`www.cincinnatikcpc.com`, so that field should fill itself in.
+## Step 1 — repoint the site URL
 
-Wait for the first build (Actions tab shows it), then confirm the site loads at
-`https://yechani33.github.io/KCPC/`. Some styling will look wrong on that
-temporary address because the site uses absolute paths — that's expected and fixes itself
-once the real domain is connected.
+```bash
+cd ~/cincinnatikcpc
+ruby tools/set_site_url.rb https://www.cincinnatikcpc.com
+printf 'www.cincinnatikcpc.com\n' > CNAME
+git add -A
+git commit -m "Switch site to the cincinnatikcpc.com domain"
+git push
+```
 
----
+The script updates the canonical tags, Open Graph URLs, `sitemap.xml`, `robots.txt`, and
+the `<base>` tag on `404.html`. Page links and images are all relative, so they need no
+changes and work at either address.
 
-## 5. Point the domain at GitHub
+The `CNAME` file is what tells GitHub Pages which domain to answer on. It must contain
+exactly `www.cincinnatikcpc.com` and nothing else.
 
-The domain is registered at **GoDaddy** and uses GoDaddy's own nameservers, so nothing has
-to be transferred — only the DNS records change.
+## Step 2 — change the DNS records at GoDaddy
 
-Go to GoDaddy → **My Products → cincinnatikcpc.com → DNS**.
+**My Products → cincinnatikcpc.com → DNS**
 
-### Delete first
-
-Remove the existing records that currently point at Wix:
+Delete the records pointing at Wix:
 
 - the `A` record on `@`
 - the `CNAME` record on `www`
 
-Leave `MX` records and anything email-related **alone** — deleting those breaks email.
+**Leave every `MX` record alone.** Those route church email — deleting them breaks it.
 
-### Then add
+Then add:
 
-| Type  | Name | Value                      | TTL    |
-|-------|------|----------------------------|--------|
-| A     | @    | `185.199.108.153`          | 1 hour |
-| A     | @    | `185.199.109.153`          | 1 hour |
-| A     | @    | `185.199.110.153`          | 1 hour |
-| A     | @    | `185.199.111.153`          | 1 hour |
+| Type  | Name | Value                  | TTL    |
+|-------|------|------------------------|--------|
+| A     | @    | `185.199.108.153`      | 1 hour |
+| A     | @    | `185.199.109.153`      | 1 hour |
+| A     | @    | `185.199.110.153`      | 1 hour |
+| A     | @    | `185.199.111.153`      | 1 hour |
 | CNAME | www  | `yechani33.github.io.` | 1 hour |
 
-Those four IPs are GitHub's — they're the same for everybody. The CNAME value is your GitHub
-Pages host, `yechani33.github.io.` (keep the trailing dot if GoDaddy shows one).
+Those four IPs are GitHub's and are the same for every user. The CNAME value is your
+Pages host — keep the trailing dot if GoDaddy shows one.
 
-Optionally also add IPv6, as four `AAAA` records on `@`:
+Optionally add IPv6 as four `AAAA` records on `@`:
 
 ```
 2606:50c0:8000::153
@@ -107,43 +99,60 @@ Optionally also add IPv6, as four `AAAA` records on `@`:
 2606:50c0:8003::153
 ```
 
----
+## Step 3 — set the custom domain and HTTPS
 
-## 6. Turn on HTTPS
+Back at **Settings → Pages**, the custom domain should read `www.cincinnatikcpc.com`
+(picked up from the CNAME file).
 
-DNS takes anywhere from a few minutes to a few hours to propagate. Check progress with:
+DNS takes anywhere from minutes to a few hours. Watch it with:
 
 ```bash
 dig +short www.cincinnatikcpc.com
 dig +short cincinnatikcpc.com
 ```
 
-Once those return the GitHub values, go back to **Settings → Pages** and tick
-**Enforce HTTPS**. If the box is greyed out, GitHub is still issuing the certificate —
-wait and check again later.
+Once those show GitHub's values instead of `wixdns.net`, tick **Enforce HTTPS**. If it is
+greyed out, GitHub is still issuing the certificate — check back later.
+
+## Step 4 — afterwards
+
+- Visit `https://www.cincinnatikcpc.com` and click through every page.
+- Run **Update Sunday sermon** once by hand from the **Actions** tab.
+- Only once that all works: cancel the Wix plan.
+- **Keep the GoDaddy registration.** It is separate from Wix hosting, costs about $22/year,
+  and is currently paid through 26 May 2027. If it lapses you lose the domain name.
+
+To back out at any point, put the old Wix DNS values back.
 
 ---
 
-## 7. Last steps
+## Appendix — installing git on a new Mac
 
-- Visit `https://www.cincinnatikcpc.com` and click through every page.
-- In the repo's **Actions** tab, run **Update Sunday sermon** once by hand to confirm it
-  works.
-- Only after the new site is confirmed working: cancel the Wix plan. Keep the domain
-  registration at GoDaddy — that's separate from Wix hosting and must stay active.
+```bash
+sudo softwareupdate --install "Command Line Tools for Xcode 27.0-27.0"
+```
+
+The label really does repeat the version; check the exact name with `softwareupdate --list`
+if it ever differs. Or run `xcode-select --install` and click **Install** in the dialog.
+
+When git asks for a password on push, it wants a **Personal Access Token**, not your
+account password. Create one at <https://github.com/settings/tokens> with both **`repo`**
+and **`workflow`** ticked. macOS Keychain remembers it after the first time.
 
 ---
 
 ## Troubleshooting
 
-**Site loads but has no styling.** The custom domain isn't active yet. The CSS is
-referenced from the site root (`/assets/css/site.css`), which only resolves once
-`www.cincinnatikcpc.com` is serving the site.
+**Pages built but the site looks unstyled.** Check the browser console for 404s on
+`assets/css/site.css`. All paths are relative, so this usually means a file did not get
+committed.
 
-**"Domain does not resolve to the GitHub Pages server."** DNS hasn't propagated. Wait and
-re-check with `dig`.
+**"Domain does not resolve to the GitHub Pages server."** DNS has not propagated yet. Wait
+and re-check with `dig`.
 
-**404 on every page.** Check that Pages is set to branch `main`, folder `/ (root)`.
+**404 on every page.** Settings → Pages must be branch `main`, folder `/ (root)`.
 
-**Sermon video shows an error locally.** Use `http://localhost:8123`, not
-`http://127.0.0.1:8123`. YouTube blocks embeds on that address.
+**Sermon video errors when previewing locally.** Use `http://localhost:8123`, never
+`http://127.0.0.1:8123` — YouTube refuses to play embeds on that address.
+
+**Push rejected over a workflow file.** Your token needs both `repo` and `workflow` scopes.

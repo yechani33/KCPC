@@ -31,6 +31,7 @@ assets/js/site.js       메뉴 열고 닫기만 담당
 assets/img/             사이트에서 쓰는 이미지
 assets/img/extra/       지금은 안 쓰지만 보관 중인 이미지
 tools/update_sermon.py  주일설교 자동 갱신 스크립트
+tools/set_site_url.rb   사이트 주소 변경 (GitHub 주소 <-> 도메인)
 ```
 
 The folder names match the old Wix addresses on purpose — `/staff`, `/time`, `/k-school`
@@ -107,9 +108,14 @@ Don't hand-edit the region between the `SERMON:` markers — the next run overwr
 ## Deployment
 
 - **Hosting:** GitHub Pages, serving the `main` branch from the repository root.
-- **Domain:** `www.cincinnatikcpc.com`, set by the `CNAME` file. Don't delete that file —
-  GitHub Pages reads it to know which domain to answer on.
-- **DNS:** managed at GoDaddy. See `DEPLOY.md` for the exact records.
+- **Current address:** <https://yechani33.github.io/KCPC/>
+- **Domain:** `www.cincinnatikcpc.com` is not connected yet. See `DEPLOY.md` — it is a
+  one-time DNS change at GoDaddy plus `ruby tools/set_site_url.rb`, and the site keeps
+  working at the GitHub address until you do it.
+- **Paths are relative, deliberately.** That is what lets the same files work both at
+  `yechani33.github.io/KCPC/` and at the root of a real domain. If you add a link or an
+  image by hand, write `../assets/img/x.jpg` from a section page and `assets/img/x.jpg`
+  from the homepage — never a leading `/`.
 - `.nojekyll` tells GitHub Pages to publish the files as-is rather than running them
   through Jekyll.
 
@@ -119,7 +125,9 @@ Don't hand-edit the region between the `SERMON:` markers — the next run overwr
 
 Photos came off the old Wix site and were resized to a maximum of 1800px, with the
 largest ones converted to WebP. To add a photo, drop it in `assets/img/` and reference it
-as `/assets/img/your-file.jpg`. Keep files under roughly 500KB so pages stay fast.
+without a leading slash — `assets/img/your-file.jpg` from the homepage,
+`../assets/img/your-file.jpg` from a section page. Keep files under roughly 500KB so
+pages stay fast.
 
 Anything in `assets/img/extra/` is kept from the old site but unused — spare photos and
 video thumbnails you can pull from later.
