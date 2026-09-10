@@ -273,6 +273,17 @@ p:last-child { margin-bottom: 0; }
 }
 .nav__item--open .nav__panel { display: block; }
 
+/* Invisible bridge across the gap above the panel, so the pointer can
+   travel from the trigger down to the links without leaving the item. */
+.nav__panel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+
 .nav__sub {
   display: block;
   padding: 10px 14px;
