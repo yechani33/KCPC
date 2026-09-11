@@ -1,6 +1,6 @@
 name: Update Sunday sermon
 
-# Pulls the newest video from the church YouTube channel into the homepage.
+# Pulls the newest video from the "KCPC 주일설교" playlist into the homepage.
 # Runs itself daily; you can also trigger it by hand from the Actions tab.
 
 on:
@@ -34,5 +34,5 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Update homepage sermon to latest YouTube video"
+          git commit -m "Update homepage sermon to the latest 주일설교"
           git push
