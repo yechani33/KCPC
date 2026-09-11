@@ -1,0 +1,25 @@
+name: _probe
+on: { workflow_dispatch: }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe YouTube endpoints
+        run: |
+          probe () {
+            code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 30 "${@:2}" "$1")
+            echo "=== $2$3 :: HTTP $code :: $(wc -c < /tmp/body) bytes :: $1"
+            head -c 160 /tmp/body | tr -d '\n'; echo; echo
+          }
+          UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
+          probe "https://www.youtube.com/feeds/videos.xml?channel_id=UC_WP9Tjs3qxHDUZSvdESLDg"
+          probe "https://www.youtube.com/feeds/videos.xml?channel_id=UC_WP9Tjs3qxHDUZSvdESLDg" -A "$UA"
+          probe "https://www.youtube.com/playlist?list=PLPLmhoZV7R_3AgKUpLbK2-s_Q8u5PWge6&hl=ko" -A "$UA" -L
+          probe "https://www.youtube.com/@KCPC_of_Cincinnati/videos" -A "$UA" -L
+          probe "https://www.youtube.com/oembed?url=https%3A//www.youtube.com/watch%3Fv%3De9lvTQBg0Hk&format=json"
+          echo "=== playlist page: can we see video ids? ==="
+          curl -s --max-time 30 -A "$UA" -L "https://www.youtube.com/playlist?list=PLPLmhoZV7R_3AgKUpLbK2-s_Q8u5PWge6&hl=ko" \
+            | grep -o '"contentId":"[A-Za-z0-9_-]\{11\}","contentType":"LOCKUP_CONTENT_TYPE_VIDEO"' | head -3
+          echo "=== playlist page: consent/bot wall? ==="
+          curl -s --max-time 30 -A "$UA" -L "https://www.youtube.com/playlist?list=PLPLmhoZV7R_3AgKUpLbK2-s_Q8u5PWge6&hl=ko" \
+            | grep -o -i 'consent.google\|Sign in to confirm\|not a bot\|captcha' | sort -u | head
